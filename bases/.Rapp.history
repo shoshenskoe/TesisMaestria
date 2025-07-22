@@ -1,0 +1,18 @@
+install.packages("httr", dependencies = TRUE)
+install.packages("curl", dependencies = TRUE)
+nstall.packages("httr", dependencies = TRUE)
+intall.packages ("httr", dependencies = TRUE)
+install.packages ("httr", dependencies = TRUE)
+exit
+y
+pwd
+brew install r
+getwd
+getwd
+clear
+clear
+getwd()
+cd..
+setwd( /Users/shoshenskoe/Documents/muestreo/Tesis/scriptsIne/)
+setwd( "/Users/shoshenskoe/Documents/muestreo/Tesis/scriptsIne")
+source("codigoPaper.R")
