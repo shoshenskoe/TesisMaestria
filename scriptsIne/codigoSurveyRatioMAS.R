@@ -78,13 +78,13 @@ listaMuestras = function (tamMuestra, cantMuestras) {
 
 
 #numero de simulaciones
-numSimulaciones = 10
+numSimulaciones = 1000
 
 #tamanio de muestra
 n = 900
 
 #en partido puede incluirse "totalMorena", "totalPan", "totalMC"
-partido = "totalPan"
+partido = "totalMC"
 
 #calculamos el theta real
 thetaReal = sum(baseVero[,partido]) / sum(baseVero$total)
@@ -107,11 +107,19 @@ tiempoFinal = Sys.time()
 print( tiempoFinal - tiempoInicial)
 
 matrizDeIntervalos = do.call(rbind, intervalos)
+
+matrizDeIntervalos = cbind( unlist( matrizDeIntervalos[1] ) ,
+                            unlist( matrizDeIntervalos[2] ) , 
+                            unlist( matrizDeIntervalos[3] ) ,
+                            unlist( matrizDeIntervalos[4] ) , 
+                            unlist( matrizDeIntervalos[5] ) , 
+                            unlist( matrizDeIntervalos[6] ) )
+
+matrizDeIntervalos = as.data.frame(matrizDeIntervalos)
 colnames(matrizDeIntervalos) = c("Izq", "Der", "estimador", 
                                  "varEst", "longitud","exito")
-
-head(matrizDeIntervalos)
-
+write_csv(matrizDeIntervalos , 
+          file = "/Users/shoshenskoe/Documents/muestreo/TesisMaestria/intMAS3.csv")
 
 #par(mfrow = c(1, 1))
 #dev.off() 
