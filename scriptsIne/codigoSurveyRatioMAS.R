@@ -1,5 +1,6 @@
 library(dplyr)
 library(readr)
+set.seed(1)
 
 #leemos base
 archivo = "/Users/shoshenskoe/Documents/muestreo/TesisMaestria/bases/baseVerosi.csv"
