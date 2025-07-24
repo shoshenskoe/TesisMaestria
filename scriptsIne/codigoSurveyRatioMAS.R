@@ -1,6 +1,9 @@
+library(dplyr)
+library(readr)
 
 #leemos base
-baseVero = read_csv(file ="/Users/shoshenskoe/Documents/muestreo/Tesis/bases/baseVerosi.csv",
+archivo = "/Users/shoshenskoe/Documents/muestreo/TesisMaestria/bases/baseVerosi.csv"
+baseVero = read_csv(file =archivo,
                     col_types = cols(
                       Stratum = col_character(),
                       ID_ENTIDAD = col_character(),
@@ -75,7 +78,7 @@ listaMuestras = function (tamMuestra, cantMuestras) {
 
 
 #numero de simulaciones
-numSimulaciones = 1000
+numSimulaciones = 10
 
 #tamanio de muestra
 n = 900
@@ -110,13 +113,13 @@ colnames(matrizDeIntervalos) = c("Izq", "Der", "estimador",
 head(matrizDeIntervalos)
 
 
-par(mfrow = c(1, 1))
-dev.off() 
-hist(longitudIntervalosMor, main = "Longitud intervalos Morena", 
-     xlab = "Longitud")
-print(exitosMorena/numSimulaciones)
-print(exitosPan/numSimulaciones)
-print(exitosMC/numSimulaciones)
+#par(mfrow = c(1, 1))
+#dev.off() 
+#hist(longitudIntervalosMor, main = "Longitud intervalos Morena", 
+#     xlab = "Longitud")
+#print(exitosMorena/numSimulaciones)
+#print(exitosPan/numSimulaciones)
+#print(exitosMC/numSimulaciones)
 
 
 
