@@ -1,8 +1,10 @@
 library(dplyr)
 library(readr)
 set.seed(1)
+library(survey)
 
-#leemos base
+
+#-----leemos la base
 archivo = "/Users/shoshenskoe/Documents/muestreo/TesisMaestria/bases/baseVerosi.csv"
 baseVero = read_csv(file =archivo,
                     col_types = cols(
@@ -19,19 +21,15 @@ baseVero = read_csv(file =archivo,
 
 baseVero = baseVero %>% select(-pi)
 
-#fijamos semilla
-set.seed(1)
 
-
-library(survey)
-
+##----- funciones auxiliares
 
 
 GeneradorIntervalosMAS = function( muestra , numeroActas, partido, thetaPob ) {
   
   n = dim(muestra)[1]
   
-  disenio = svydesign( 
+  disenio = survey::svydesign( 
     id = ~1 , 
     data = muestra ,
     weights = ~rep( (numeroActas/n), n) , 
@@ -60,32 +58,37 @@ GeneradorIntervalosMAS = function( muestra , numeroActas, partido, thetaPob ) {
 }
 
 # tamMuestra es la cantidad de elementos por cada estrato 
-generadorMuestra = function(tamMuestra) {
+generadorMuestra = function(tamMuestraEstrato) {
   
-  muestra = baseVero %>%
-    dplyr::slice_sample(n = tamMuestra) %>%
+  muestra = baseVero %>% dplyr::group_by(Stratum) %>%
+    dplyr::slice_sample(n = tamMuestraEstrato) %>% 
+    dplyr::ungroup() %>%
     as.data.frame()
   
   return (muestra)
 }
 
-listaMuestras = function (tamMuestra, cantMuestras) {
+listaMuestras = function (tamMuestraEstrato, cantMuestras) {
   #listaDeMuestras = vector(mode = "list", length = cantMuestras )
-  vectorTamanios = rep(tamMuestra, cantMuestras)
+  vectorTamanios = rep(tamMuestraEstrato, cantMuestras)
   listaDeMuestras = lapply( vectorTamanios, generadorMuestra )
   
   return( listaDeMuestras  )
 }
 
 
+
+##---- generacion intervalos 
+
+
 #numero de simulaciones
 numSimulaciones = 1000
 
 #tamanio de muestra
-n = 900
+n = 15
 
 #en partido puede incluirse "totalMorena", "totalPan", "totalMC"
-partido = "totalMC"
+partido = "totalPan"
 
 #calculamos el theta real
 thetaReal = sum(baseVero[,partido]) / sum(baseVero$total)
@@ -96,7 +99,7 @@ thetaReal = sum(baseVero[,partido]) / sum(baseVero$total)
 #a obtener la lista de intervalos
 
 #creamos una lista de muestras
-lista = listaMuestras(tamMuestra= n, 
+lista = listaMuestras(tamMuestraEstrato= n, 
                       cantMuestras = numSimulaciones)
 numeroActas = dim(baseVero)[1]
 
@@ -109,18 +112,20 @@ print( tiempoFinal - tiempoInicial)
 
 matrizDeIntervalos = do.call(rbind, intervalos)
 
-matrizDeIntervalos = cbind( unlist( matrizDeIntervalos[1] ) ,
-                            unlist( matrizDeIntervalos[2] ) , 
-                            unlist( matrizDeIntervalos[3] ) ,
-                            unlist( matrizDeIntervalos[4] ) , 
-                            unlist( matrizDeIntervalos[5] ) , 
-                            unlist( matrizDeIntervalos[6] ) )
+matrizDeIntervalos = cbind( as.numeric ( unlist( matrizDeIntervalos[1] )  ) ,
+                             as.numeric ( unlist( matrizDeIntervalos[2] ) ) , 
+                             as.numeric ( unlist( matrizDeIntervalos[3] ) ) ,
+                             as.numeric ( unlist( matrizDeIntervalos[4] ) ) , 
+                             as.numeric ( unlist( matrizDeIntervalos[5] ) ) , 
+                             as.numeric ( unlist( matrizDeIntervalos[6] ) )  )
 
 matrizDeIntervalos = as.data.frame(matrizDeIntervalos)
 colnames(matrizDeIntervalos) = c("Izq", "Der", "estimador", 
                                  "varEst", "longitud","exito")
+
+ruta = "/Users/shoshenskoe/Documents/muestreo/TesisMaestria/intervalos/INE/intervaloEstrMAS/ineEst15/Pan/estMAS15.csv"
 write_csv(matrizDeIntervalos , 
-          file = "/Users/shoshenskoe/Documents/muestreo/TesisMaestria/intMAS3.csv")
+          file = ruta)
 
 #par(mfrow = c(1, 1))
 #dev.off() 
