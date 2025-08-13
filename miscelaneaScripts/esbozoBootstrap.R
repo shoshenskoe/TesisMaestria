@@ -21,43 +21,7 @@ base = readr::read_csv(file =archivo,
                        ) ) 
 
 
-#obtenemos la muestra principal
-muestraPrincipal = base %>% 
-  dplyr::group_by(Stratum) %>% 
-  dplyr::sample_n(size= 3) %>% 
-  dplyr::ungroup()
-
-
-muestraBoots = muestraPrincipal %>% 
-  dplyr::group_by(Stratum) %>% 
-  dplyr::sample_n(size= 2, replace = TRUE) %>% 
-  dplyr::ungroup()
-
-posiblesResultados = as.factor( muestraPrincipal$CLAVE_ACTA )
-valoresMuestraBots = factor( muestraBoots$CLAVE_ACTA , 
-                             levels = posiblesResultados )
-
-tablaFrecuencias = dplyr::as_tibble( table(valoresMuestraBots) )
-
-
-
-
-
-valoresBoot = as.factor( muestraBoots$CLAVE_ACTA, 
-                         levels = as.factor(muestraPrincipal$CLAVE_ACTA) )
-
-valoresPrincipal = as.factor(muestraPrincipal$CLAVE_ACTA)
-
-table ( muestraBoots$CLAVE_ACTA, 
-        levels=   as.factor(muestraPrincipal$CLAVE_ACTA) )
-
-
-
-
 ##------ codigo usando solo biblioteca dplyr
-
-tamanioMuestraEstrato = 3
-tamanioBoots= tamanioMuestraEstrato - 1
 
 
 #funcion que genera una estimacion bootstrap utilizando el algoritmo . Como argumento recibe una muestra originada por muestreo
@@ -83,7 +47,7 @@ Bootstrap = function( muestraPrin , tamanioBoots, tamanioMuestraEstrato  ) {
   
 } #termina funcion
 
-GeneradorIntervalo = function( base, tamanioMuestraEstrato, R=500 ){
+Intervalo = function( base, tamanioMuestraEstrato, R=500, thetaReal ){
   
   tamanioBoots= tamanioMuestraEstrato - 1
   
@@ -109,17 +73,24 @@ GeneradorIntervalo = function( base, tamanioMuestraEstrato, R=500 ){
   
   varianzaBootstrap = mean( (estimadoresBootstrap- estRazon)^2 )
   
-  intervaloIzq = estRazon - varianzaBootstrap
-  intervaloDer = estRazon + varianzaBootstrap
+  intervaloIzq = estRazon -  cuantil*sqrt( varianzaBootstrap )
+  intervaloDer = estRazon + cuantil*sqrt( varianzaBootstrap )
   
-  return( c(intervaloIzq, intervaloDerm , varianzaBootstrap) )
+  #verificamos que se atrapo al verdadero valor
+  exito = ( intervaloIzq <= thetaReal & thetaReal <= intervaloDer )
+  
+  return( c(intervaloIzq, intervaloDer , varianzaBootstrap, exito ) )
+  
   
 } #termina funcion generadora de intervalos
 
-GeneraIntervalos = function(numIntervalos, base, tamMuestraEst, R=500) {
-  matriz = replicate( n=numIntervalos, GeneraIntervalos(base= base, 
-                                               tamanioMuestraEstrato =tamMuestraEst,
-                                               R= R) )
+GeneraIntervalos = function(numIntervalos,base,tamMuestraEst,R=500,parametro) {
+  
+  matriz = replicate( n=numIntervalos, 
+                      Intervalo(base= base, 
+                                tamanioMuestraEstrato =tamMuestraEst,
+                                R= R,
+                                thetaReal = parametro) )
   matriz = t( matriz )
   
   return( matriz )
@@ -128,14 +99,40 @@ GeneraIntervalos = function(numIntervalos, base, tamMuestraEst, R=500) {
 
 ##---------------- echamos a correr la base
 
+partidos = c("totalMorena")
+tamanios = c(3)
+
+cuantil = qnorm(0.95, mean = 0, sd = 1)
+
+for (partido in partidos) {
+  for (tamanio in tamanios) {
+    
+    datos =  dplyr::tibble(
+      id = base$CLAVE_ACTA,
+      y = base[[ partido ]],
+      z = base$total,
+      estrato = base$Stratum,
+      totalEstrato = base$totalEstrato
+    )
+    
+    paramReal  = sum(datos$y) / sum(datos$z)
+    
+    valores = GeneraIntervalos(numIntervalos = 2, base = datos, 
+                               tamMuestraEst = tamanio, R=500, 
+                               parametro = paramReal)
+    
+    nombreArchivo = paste( as.character(partido) ,as.character(tamanio), 
+                           sep = "_")
+    nombreArchivo = paste(nombreArchivo, ".csv", sep = "")
+    ruta = "/Users/shoshenskoe/Documents/muestreo/Intervalos/INE/intervalos_bootstrap/"
+    nombreArchivo = paste(ruta, nombreArchivo , sep = "")
+    
+    readr::write_csv(valores, nombreArchivo)
+  }
+}
 
 
-datos =  dplyr::tibble(
-  id = base$CLAVE_ACTA,
-  y = base$totalPan,
-  z = base$total,
-  estrato = base$Stratum,
-  totalEstrato = base$totalEstrato
-)
 
-generadorIntervalo( base=datos, tamanioMuestraEstrato = 25 )
+
+
+
