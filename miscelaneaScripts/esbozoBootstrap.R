@@ -61,8 +61,6 @@ Intervalo = function( base, tamanioMuestraEstrato, R=500, thetaReal ){
   estTotal = sum( muestraPrincipal$z / muestraPrincipal$pi )
   estRazon = estTotalPartido / estTotal
   
-  
-  R=500
   #estimadoresBoots = rep(0, times= R)
   
   estimadoresBootstrap = replicate( n= R,
@@ -79,7 +77,9 @@ Intervalo = function( base, tamanioMuestraEstrato, R=500, thetaReal ){
   #verificamos que se atrapo al verdadero valor
   exito = ( intervaloIzq <= thetaReal & thetaReal <= intervaloDer )
   
-  return( c(intervaloIzq, intervaloDer , varianzaBootstrap, exito ) )
+  longitud = intervaloDer - intervaloIzq
+  
+  return( c(intervaloIzq, intervaloDer , varianzaBootstrap, longitud, exito ) )
   
   
 } #termina funcion generadora de intervalos
@@ -99,13 +99,23 @@ GeneraIntervalos = function(numIntervalos,base,tamMuestraEst,R=500,parametro) {
 
 ##---------------- echamos a correr la base
 
-partidos = c("totalMorena")
-tamanios = c(3)
+partidos = c("totalMorena", "totalPan", "totalMC")
+tamanios = c(3,15,25)
 
 cuantil = qnorm(0.95, mean = 0, sd = 1)
 
 for (partido in partidos) {
   for (tamanio in tamanios) {
+    
+    nombreArchivo = paste( as.character(partido) ,as.character(tamanio), 
+                           sep = "_")
+    nombreArchivo = paste(nombreArchivo, ".csv", sep = "")
+    
+    print(paste("procesando: ", nombreArchivo) )
+    
+    ruta = "/Users/shoshenskoe/Documents/muestreo/Intervalos/INE/intervalos_bootstrap/"
+    nombreArchivo = paste(ruta, nombreArchivo , sep = "")
+    
     
     datos =  dplyr::tibble(
       id = base$CLAVE_ACTA,
@@ -121,13 +131,8 @@ for (partido in partidos) {
                                tamMuestraEst = tamanio, R=500, 
                                parametro = paramReal)
     
-    nombreArchivo = paste( as.character(partido) ,as.character(tamanio), 
-                           sep = "_")
-    nombreArchivo = paste(nombreArchivo, ".csv", sep = "")
-    ruta = "/Users/shoshenskoe/Documents/muestreo/Intervalos/INE/intervalos_bootstrap/"
-    nombreArchivo = paste(ruta, nombreArchivo , sep = "")
-    
-    readr::write_csv(valores, nombreArchivo)
+    dataframe = as.data.frame(valores)
+    readr::write_csv(dataframe, nombreArchivo)
   }
 }
 
